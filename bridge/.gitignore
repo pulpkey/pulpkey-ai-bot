@@ -1,4 +1,9 @@
 node_modules
 auth
+.local-auth
+.local-data
+messages
+resources
+memory
 *.log
 .env

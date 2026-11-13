@@ -36,6 +36,7 @@ const timeoutMs = (): number => {
  * when the scheme is missing. Returns null for anything that isn't a web URL
  * (bare words, mailto:, etc.).
  */
+// eslint-disable-next-line complexity -- URL scheme, host and private-network validation are security gates.
 export const normaliseUrl = (input: string): string | null => {
   const s = input.trim();
   if (!s) {
@@ -56,8 +57,30 @@ export const normaliseUrl = (input: string): string | null => {
     if (url.protocol !== "http:" && url.protocol !== "https:") {
       return null;
     }
-    // Require a dotted host so a stray word isn't turned into "https://word".
-    if (!url.hostname.includes(".")) {
+    const host = url.hostname.toLowerCase();
+    // Require a dotted public host so a stray word isn't turned into
+    // "https://word" and the fetch provider is never pointed at an obvious
+    // loopback, private-network or link-local literal.
+    if (
+      !host.includes(".") ||
+      host === "localhost" ||
+      host.endsWith(".localhost")
+    ) {
+      return null;
+    }
+    const octets = host.split(".").map(Number);
+    if (
+      octets.length === 4 &&
+      octets.every(
+        (octet) => Number.isInteger(octet) && octet >= 0 && octet <= 255
+      ) &&
+      (octets[0] === 0 ||
+        octets[0] === 10 ||
+        octets[0] === 127 ||
+        (octets[0] === 169 && octets[1] === 254) ||
+        (octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31) ||
+        (octets[0] === 192 && octets[1] === 168))
+    ) {
       return null;
     }
     return url.toString();
