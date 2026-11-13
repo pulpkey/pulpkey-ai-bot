@@ -22,6 +22,8 @@
     "prepare": "lefthook install || true"
   },
   "dependencies": {
+    "@ai-sdk/google": "^4.0.120",
+    "@ai-sdk/openai-compatible": "^3.0.92",
     "@js-temporal/polyfill": "^0.5.1",
     "ai": "7.0.171",
     "eve": "0.26.2",

@@ -27,7 +27,7 @@ unofficial integration and should be isolated on a company-controlled number.
 | Eve agent | Vercel | Claude reasoning, tools, schedules, approvals |
 | WhatsApp bridge | Railway + persistent volume | WhatsApp session, group routing, proactive sends |
 | PostgreSQL | Supabase, Neon or managed Postgres | employees, creators, automations, work logs, audit |
-| AI Gateway | Vercel | Claude access, observability and model fallback |
+| LLM providers | Gemini / Groq | Independent free-tier AI replies; explicit provider selection |
 
 Fixed messages and deadlines are handled deterministically. Claude is used for
 natural-language understanding, synthesis and tool selection—not as the clock
@@ -78,9 +78,10 @@ bridge after changing the allowlist.
 2. Deploy the root project to Vercel and configure the root `.env.example` values.
 
    For a no-cost end-to-end bridge test, set `AI_DISABLED=true`. The bot will
-   acknowledge WhatsApp messages without calling a model. When ready for live
-   AI, set `AI_DISABLED=false` (or remove it), add `AI_GATEWAY_API_KEY`, and
-   redeploy; no code change is required.
+   acknowledge WhatsApp messages without calling a model. For free-tier AI,
+   set `AI_DISABLED=false`, add `GEMINI_API_KEY`, and deploy. Gemini is the
+   default provider; `AI_PROVIDER=groq` selects Groq only when its key is
+   configured. No paid provider is selected implicitly.
 3. Deploy `bridge/` to Railway, attach a persistent volume at `/data`, set
    `AUTH_DIR=/data/auth`, and configure `bridge/.env.example`.
 4. Link a dedicated WhatsApp number once by QR or pairing code.
