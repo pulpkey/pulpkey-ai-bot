@@ -115,7 +115,10 @@ const buildUserMessage = (
 };
 
 const drainStream = async (
-  stream: ReadableStream<{ type: string; data: { message?: string } }>
+  stream: ReadableStream<{
+    type: string;
+    data: { finishReason?: string; message?: string };
+  }>
 ): Promise<string> => {
   const reader = stream.getReader();
   // The model emits interim narration before each tool call ("Let me
@@ -129,10 +132,21 @@ const drainStream = async (
       if (done) {
         break;
       }
-      if (value.type === "message.completed" && value.data.message) {
+      if (
+        value.type === "message.completed" &&
+        value.data.finishReason !== "tool-calls" &&
+        value.data.message
+      ) {
         finalMessage = value.data.message;
       }
-      if (value.type === "turn.completed" || value.type === "turn.failed") {
+      // `turn.completed` only describes one model step. A tool-using agent
+      // can emit it before its terminal assistant message. The session
+      // boundary is the reliable point at which the reply is complete.
+      if (
+        value.type === "session.waiting" ||
+        value.type === "session.completed" ||
+        value.type === "session.failed"
+      ) {
         break;
       }
     }
@@ -219,7 +233,10 @@ export default defineChannel({
       // getEventStream's element type is wider than drainStream's; the cast
       // narrows it to the event shape we consume (getEventStream is compatible).
       const finalMessage = await drainStream(
-        stream as ReadableStream<{ type: string; data: { message?: string } }>
+        stream as ReadableStream<{
+          type: string;
+          data: { finishReason?: string; message?: string };
+        }>
       );
 
       // Deterministic guardrail: the model drifts toward em/en dashes (read as
