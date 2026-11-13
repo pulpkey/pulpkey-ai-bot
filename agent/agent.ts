@@ -32,4 +32,10 @@ if (process.env.GEMINI_API_KEY && process.env.GROQ_API_KEY) {
       : withFallbackModel(geminiModel, groqModel);
 }
 
-export default defineAgent({ model });
+// `withFallbackModel` intentionally exposes a composite model id. Tell Eve the
+// conservative context window explicitly so build-time compaction metadata does
+// not need to resolve that synthetic id through AI Gateway.
+export default defineAgent({
+  model,
+  modelContextWindowTokens: 128_000,
+});
