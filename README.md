@@ -76,6 +76,11 @@ bridge after changing the allowlist.
 
 1. Provision PostgreSQL and run both migrations.
 2. Deploy the root project to Vercel and configure the root `.env.example` values.
+
+   For a no-cost end-to-end bridge test, set `AI_DISABLED=true`. The bot will
+   acknowledge WhatsApp messages without calling a model. When ready for live
+   AI, set `AI_DISABLED=false` (or remove it), add `AI_GATEWAY_API_KEY`, and
+   redeploy; no code change is required.
 3. Deploy `bridge/` to Railway, attach a persistent volume at `/data`, set
    `AUTH_DIR=/data/auth`, and configure `bridge/.env.example`.
 4. Link a dedicated WhatsApp number once by QR or pairing code.

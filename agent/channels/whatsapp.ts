@@ -19,6 +19,7 @@ import { cleanReply } from "#lib/format-reply.js";
  */
 
 const BRIDGE_SECRET = process.env.WHATSAPP_BRIDGE_SECRET;
+const AI_DISABLED = process.env.AI_DISABLED === "true";
 
 interface BridgePayload {
   /** WhatsApp group JID, e.g. `1203...@g.us`. Used as the continuation token. */
@@ -191,6 +192,16 @@ export default defineChannel({
           { error: "token and message are required" },
           { status: 400 }
         );
+      }
+
+      // Cost-free readiness mode: validates the complete WhatsApp path without
+      // invoking a model. Remove `AI_DISABLED` (or set it to false) after an
+      // AI Gateway/provider key is configured to enable normal agent replies.
+      if (AI_DISABLED) {
+        return Response.json({
+          reply:
+            "Friday is connected and ready. AI replies are paused until a model key is configured.",
+        });
       }
 
       const auth = {
