@@ -1,0 +1,49 @@
+{
+  "name": "pulpkey-ai-agent",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pulpkey's private WhatsApp operations, people and creator intelligence agent.",
+  "type": "module",
+  "imports": {
+    "#data/*": "./agent/lib/data/*",
+    "#*": "./agent/*",
+    "#evals/*": "./evals/*"
+  },
+  "scripts": {
+    "build": "eve build",
+    "dev": "eve dev",
+    "start": "eve start",
+    "test": "vitest run",
+    "test:evals": "EVE_DOCKER_PATH=/usr/bin/false eve eval --strict",
+    "smoke": "node scripts/smoke.ts",
+    "typecheck": "tsc --noEmit",
+    "check": "ultracite check",
+    "fix": "ultracite fix",
+    "prepare": "lefthook install || true"
+  },
+  "dependencies": {
+    "@js-temporal/polyfill": "^0.5.1",
+    "ai": "7.0.171",
+    "eve": "0.26.2",
+    "postgres": "^4.1.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "26.x",
+    "lefthook": "^2.1.10",
+    "microsandbox": "^0.5.10",
+    "oxfmt": "^0.59.0",
+    "oxlint": "^1.74.0",
+    "typescript": "7.0.2",
+    "ultracite": "7.9.4",
+    "vitest": "^5.0.2"
+  },
+  "overrides": {
+    "ai": "7.0.171",
+    "source-map-js": "1.2.2",
+    "vite": "8.1.6"
+  },
+  "engines": {
+    "node": "24.x"
+  }
+}
