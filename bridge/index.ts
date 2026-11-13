@@ -224,6 +224,8 @@ const health = { whatsapp: "connecting" };
 let currentSock: WASocket | null = null;
 let server: ReturnType<typeof startServer> | null = null;
 let shuttingDown = false;
+let reconnectTimer: NodeJS.Timeout | null = null;
+let reconnectAttempts = 0;
 let inFlight = 0;
 // Oldest-known message per group (id + ts): the anchor for on-demand backfill.
 const anchors: Anchors = {};
@@ -1426,6 +1428,11 @@ const handleConnectionUpdate = (update: Partial<ConnectionState>): void => {
   }
   if (connection === "open") {
     health.whatsapp = "open";
+    reconnectAttempts = 0;
+    if (reconnectTimer) {
+      clearTimeout(reconnectTimer);
+      reconnectTimer = null;
+    }
     logger.info("Connected to WhatsApp.");
   }
   if (connection === "close") {
@@ -1438,8 +1445,17 @@ const handleConnectionUpdate = (update: Partial<ConnectionState>): void => {
       loggedOut ? "logged out" : "connection closed, reconnecting"
     );
     if (!shuttingDown && !loggedOut) {
-      // oxlint-disable-next-line prefer-await-to-then, prefer-await-to-callbacks, no-use-before-define -- fire-and-forget in sync event handler; cannot await; start defined later in module order
-      start().catch((error) => logger.error({ error }, "reconnect failed"));
+      if (reconnectTimer) {
+        return;
+      }
+      const delayMs = Math.min(1000 * 2 ** reconnectAttempts, 30_000);
+      reconnectAttempts += 1;
+      logger.info({ delayMs }, "reconnect scheduled");
+      reconnectTimer = setTimeout(() => {
+        reconnectTimer = null;
+        // oxlint-disable-next-line prefer-await-to-then, prefer-await-to-callbacks, no-use-before-define -- fire-and-forget in sync event handler; cannot await; start defined later in module order
+        start().catch((error) => logger.error({ error }, "reconnect failed"));
+      }, delayMs);
     }
   }
 };
@@ -1642,6 +1658,10 @@ const shutdown = async (signal: string): Promise<void> => {
     return;
   }
   shuttingDown = true;
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+  }
   logger.info({ signal }, "shutting down: draining in-flight work");
   const deadline = Date.now() + SHUTDOWN_DRAIN_MS;
   // oxlint-disable-next-line no-unmodified-loop-condition -- inFlight is modified by concurrent async message handlers
