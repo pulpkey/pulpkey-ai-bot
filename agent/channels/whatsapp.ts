@@ -145,10 +145,12 @@ const drainStream = async (
       // boundary is the reliable point at which the reply is complete.
       if (
         value.type === "session.waiting" ||
-        value.type === "session.completed" ||
-        value.type === "session.failed"
+        value.type === "session.completed"
       ) {
         break;
+      }
+      if (value.type === "session.failed") {
+        throw new Error(value.data.message || "agent session failed");
       }
     }
   } finally {
@@ -254,6 +256,13 @@ export default defineChannel({
       // AI-written here) and Markdown emphasis that WhatsApp renders wrong, so
       // normalise on the way out. See cleanReply for the exact rules.
       const reply = cleanReply(finalMessage);
+
+      if (!reply) {
+        return Response.json(
+          { error: "agent returned an empty reply" },
+          { status: 502 }
+        );
+      }
 
       return Response.json({ reply });
     }),
