@@ -18,14 +18,20 @@ const groq = createOpenAICompatible({
 
 const provider = process.env.AI_PROVIDER?.trim().toLowerCase() || "gemini";
 const geminiModel = gemini(
-  process.env.GEMINI_MODEL?.trim() || "gemini-2.5-flash-lite"
+  process.env.GEMINI_MODEL?.trim() || "gemini-3.5-flash-lite"
 );
 const groqModel = groq.chatModel(
   process.env.GROQ_MODEL?.trim() || "openai/gpt-oss-20b"
 );
 let model = provider === "groq" ? groqModel : geminiModel;
 
-if (process.env.GEMINI_API_KEY && process.env.GROQ_API_KEY) {
+// Some providers encode provider-specific reasoning data in tool-call history.
+// Keep automatic failover opt-in until that history is normalised at the
+// provider boundary; an unavailable backup must never interrupt a healthy
+// primary conversation.
+const fallbackEnabled = process.env.AI_FALLBACK_ENABLED === "true";
+
+if (fallbackEnabled && process.env.GEMINI_API_KEY && process.env.GROQ_API_KEY) {
   model =
     provider === "groq"
       ? withFallbackModel(groqModel, geminiModel)
